@@ -6,8 +6,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Scanner;
 
 import static org.junit.Assert.assertEquals;
 
@@ -15,20 +18,39 @@ import static org.junit.Assert.assertEquals;
 public class BindyGeneratorTest {
 
     private BindyGenerator generator;
-    private File expected;
+    private Path expected;
+    private Path javaSouceFilePath;
 
     @Before
     public void init() {
         GeneratorConfig config = getConfig();
         File soure = Paths.get("src/test/resources/person.csv").toFile();
-        this.expected = Paths.get("src/test/resources/BindyPerson.java").toFile();
-        this.generator = new BindyGenerator(config, soure);
+        this.expected = Paths.get("src/test/resources/ExpectedResult.java");
+        this.javaSouceFilePath = Paths.get("src/test/resources/BindyPerson.java");
+        this.generator = new BindyGenerator(config, soure, javaSouceFilePath);
     }
 
     @Test
-    public void testGenerate() {
-        File javaSourceFile = this.generator.generate();
-        assertEquals("Generated java file same as expected java file", javaSourceFile, this.expected);
+    public void testGenerate() throws FileNotFoundException {
+        this.generator.generate();
+        File result = javaSouceFilePath.toFile();
+        File expectedFile = expected.toFile();
+
+        String resultContent = "";
+        Scanner sc = new Scanner(result);
+        while(sc.hasNextLine()) {
+            resultContent += sc.nextLine();
+        }
+        sc.close();
+
+        String expectedFileContent = "";
+        sc = new Scanner(expectedFile);
+        while(sc.hasNextLine()) {
+            expectedFileContent += sc.nextLine();
+        }
+        sc.close();
+
+        assertEquals("File content is the same", resultContent, expectedFileContent);
     }
 
     @Test
@@ -76,6 +98,11 @@ public class BindyGeneratorTest {
     }
 
     private GeneratorConfig getConfig(String delimiter, boolean isHeader, boolean useNumericFieldTypes) {
-        return new GeneratorConfig(delimiter, isHeader, useNumericFieldTypes);
+        return new GeneratorConfig(
+                delimiter,
+                "com.github.johanfredin.bindygenerator",
+                "BindyPerson",
+                isHeader,
+                useNumericFieldTypes);
     }
 }

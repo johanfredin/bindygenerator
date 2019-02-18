@@ -1,4 +1,4 @@
-package=com.github.johanfredin.bindygenerator
+package com.github.johanfredin.bindygenerator;
 
 import org.apache.camel.dataformat.bindy.annotation.CsvRecord;
 import org.apache.camel.dataformat.bindy.annotation.DataField
@@ -16,6 +16,6 @@ public class BindyPerson {
 	private Double tax;
 
 	@DataField(pos=4)
-	private String mixed-bag;
+	private String mixedbag;
 
 }
