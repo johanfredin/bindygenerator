@@ -7,27 +7,32 @@ import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.stream.IntStream;
 
-public class BindyGenerator {
+class BindyGenerator {
 
     private GeneratorConfig generatorConfig;
     private File file;
 
-    public BindyGenerator(GeneratorConfig generatorConfig, File file) {
+    BindyGenerator(GeneratorConfig generatorConfig, File file) {
         this.generatorConfig = generatorConfig;
         this.file = file;
     }
 
-    public File generate() {
+    void setGeneratorConfig(GeneratorConfig generatorConfig) {
+        this.generatorConfig = generatorConfig;
+    }
+
+    File generate() {
         return null;
     }
 
-    public Map<Integer, BindyField> getFieldMapFromFile() {
+    Map<Integer, BindyField> getFieldMapFromFile() {
         Scanner sc = null;
         try {
             sc = new Scanner(file);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+        assert sc != null;
         String[] header = getHeader(sc.nextLine());
         Map<Integer, BindyField> bindyFieldMap = new HashMap<>();
         Map<Integer, Set<FieldType>> fieldTypesMap = new HashMap<>();
@@ -69,22 +74,20 @@ public class BindyGenerator {
                                 .stream()
                                 .sorted()
                                 .findFirst();
-                        bindyField.setType(first.get().getType());
+                        bindyField.setType(first.orElseThrow(RuntimeException::new).getType());
                     });
-
-            bindyFieldMap.entrySet().forEach(System.out::println);
         }
         return bindyFieldMap;
     }
 
-    public String[] getHeader(String nextLine) {
+    private String[] getHeader(String nextLine) {
         final String[] header = nextLine.split(generatorConfig.getDelimiter());
         return IntStream.range(0, header.length)
                 .mapToObj(i -> generatorConfig.isHeader() ? header[i] : "COLUMN_" + i)
                 .toArray(String[]::new);
     }
 
-    public FieldType getType(String column) {
+    private FieldType getType(String column) {
         if (column != null && !column.isEmpty()) {
             if (NumberUtils.isParsable(column)) {
                 if (column.contains(".")) {
