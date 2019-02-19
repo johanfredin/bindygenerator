@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(JUnit4.class)
 public class BindyGeneratorTest {
@@ -54,18 +55,48 @@ public class BindyGeneratorTest {
     }
 
     @Test
-    public void getFieldMapFromFile_hasHeader_useNumericFieldValues() {
+    public void getFieldMapFromFile_hasHeader_useNumericFieldValues_ObjectTypes() {
+        this.generator.setGeneratorConfig(
+                getConfig(";", "Jonsson", FieldMapping.LOWER_CAMEL_CASE,
+                        true, true, false));
+
         Map<Integer, BindyField> fieldMapFromFile = this.generator.getFieldMapFromFile();
         assertEquals("Size=4", 4, fieldMapFromFile.size());
         assertEquals("Field name=name","name", fieldMapFromFile.get(0).getName());
         assertEquals("Field name=age","age", fieldMapFromFile.get(1).getName());
         assertEquals("Field name=tax","tax", fieldMapFromFile.get(2).getName());
-        assertEquals("Field name=mixed-bag","mixed-bag", fieldMapFromFile.get(3).getName());
+        assertEquals("Field name=mixedBag","mixedBag", fieldMapFromFile.get(3).getName());
+
         assertEquals("Field type=String",String.class.getSimpleName(), fieldMapFromFile.get(0).getType());
-        assertEquals("Field name=Integer",Integer.class.getSimpleName(), fieldMapFromFile.get(1).getType());
-        assertEquals("Field name=Double when mixed int and double types",
-                Double.class.getSimpleName(), fieldMapFromFile.get(2).getType());
-        assertEquals("Field name=String when at least one field is a String",
+        assertEquals("Field type=Integer",Integer.class.getSimpleName(), fieldMapFromFile.get(1).getType());
+        assertEquals("Field type=Float when mixed int and decimal types",
+                Float.class.getSimpleName(), fieldMapFromFile.get(2).getType());
+        assertEquals("Field type=String when at least one field is a String",
+                String.class.getSimpleName(), fieldMapFromFile.get(3).getType());
+
+        assertEquals(0, fieldMapFromFile.get(0).getPos());
+        assertEquals(1, fieldMapFromFile.get(1).getPos());
+        assertEquals(2, fieldMapFromFile.get(2).getPos());
+        assertEquals(3, fieldMapFromFile.get(3).getPos());
+    }
+
+    @Test
+    public void getFieldMapFromFile_hasHeader_useNumericFieldValues_PrimitiveTypes() {
+        this.generator.setGeneratorConfig(
+                getConfig(";", "Jonsson", FieldMapping.LOWER_CAMEL_CASE,
+                        true, true, true));
+
+        Map<Integer, BindyField> fieldMapFromFile = this.generator.getFieldMapFromFile();
+        assertEquals("Size=4", 4, fieldMapFromFile.size());
+        assertEquals("Field name=name","name", fieldMapFromFile.get(0).getName());
+        assertEquals("Field name=age","age", fieldMapFromFile.get(1).getName());
+        assertEquals("Field name=tax","tax", fieldMapFromFile.get(2).getName());
+        assertEquals("Field name=mixedBag","mixedBag", fieldMapFromFile.get(3).getName());
+        assertEquals("Field type=String",String.class.getSimpleName(), fieldMapFromFile.get(0).getType());
+        assertEquals("Field type=int","int", fieldMapFromFile.get(1).getType());
+        assertEquals("Field type=float when mixed int and decimal types",
+                "float", fieldMapFromFile.get(2).getType());
+        assertEquals("Field type=String when at least one field is a String",
                 String.class.getSimpleName(), fieldMapFromFile.get(3).getType());
         assertEquals(0, fieldMapFromFile.get(0).getPos());
         assertEquals(1, fieldMapFromFile.get(1).getPos());
@@ -75,7 +106,10 @@ public class BindyGeneratorTest {
 
     @Test
     public void testFieldMapFromFile_noHeader_DoNotUseNumericFieldValues() {
-        this.generator.setGeneratorConfig(getConfig(";", false, false));
+        this.generator.setGeneratorConfig(
+                getConfig(";", "Jonsson", FieldMapping.AS_IS,
+                        false, false, false));
+
         Map<Integer, BindyField> fieldMapFromFile = this.generator.getFieldMapFromFile();
         assertEquals("Size=4", 4, fieldMapFromFile.size());
         assertEquals("Field name=COLUMN_0","COLUMN_0", fieldMapFromFile.get(0).getName());
@@ -83,9 +117,9 @@ public class BindyGeneratorTest {
         assertEquals("Field name=COLUMN_2","COLUMN_2", fieldMapFromFile.get(2).getName());
         assertEquals("Field name=COLUMN_3","COLUMN_3", fieldMapFromFile.get(3).getName());
         assertEquals("Field type=String", String.class.getSimpleName(), fieldMapFromFile.get(0).getType());
-        assertEquals("Field name=String", String.class.getSimpleName(), fieldMapFromFile.get(1).getType());
-        assertEquals("Field name=String", String.class.getSimpleName(), fieldMapFromFile.get(2).getType());
-        assertEquals("Field name=String when at least one field is a String",
+        assertEquals("Field type=String", String.class.getSimpleName(), fieldMapFromFile.get(1).getType());
+        assertEquals("Field type=String", String.class.getSimpleName(), fieldMapFromFile.get(2).getType());
+        assertEquals("Field type=String when at least one field is a String",
                 String.class.getSimpleName(), fieldMapFromFile.get(3).getType());
         assertEquals(0, fieldMapFromFile.get(0).getPos());
         assertEquals(1, fieldMapFromFile.get(1).getPos());
@@ -93,16 +127,41 @@ public class BindyGeneratorTest {
         assertEquals(3, fieldMapFromFile.get(3).getPos());
     }
 
-    private GeneratorConfig getConfig() {
-        return getConfig(";", true, true);
+    @Test
+    public void testGetHeaderField_LowerCamelCase() {
+        String headerField = this.generator.getHeaderField("APEX_TWIN", FieldMapping.LOWER_CAMEL_CASE);
+        assertEquals("Should now be apexTwin", "apexTwin", headerField);
     }
 
-    private GeneratorConfig getConfig(String delimiter, boolean isHeader, boolean useNumericFieldTypes) {
-        return new GeneratorConfig(
-                delimiter,
-                "com.github.johanfredin.bindygenerator",
+    @Test
+    public void testGetHeaderField_AsIs_QuoteCharsRemoved() {
+        String headerField = this.generator.getHeaderField("'\"MY_MONKEY\"'", FieldMapping.AS_IS);
+        assertEquals("Should now be MY_MONKEY", "MY_MONKEY", headerField);
+    }
+
+    @Test
+    public void testGetHeaderField_LowerCamelCase_IllegalDelimitersRemoved() {
+        String headerField = this.generator.getHeaderField("MY-LITTLE MONKEY\"'", FieldMapping.LOWER_CAMEL_CASE);
+        assertEquals("Should now be myLittleMonkey", "myLittleMonkey", headerField);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testGetHeaderField_AsIs_IllegalDelimitersFound() {
+        String headerField = this.generator.getHeaderField("MY-LITTLE MONKEY\"'", FieldMapping.AS_IS);
+        assertNull("Header field could not be transformed", headerField);
+    }
+
+    private GeneratorConfig getConfig() {
+        return getConfig(";",
                 "BindyPerson",
-                isHeader,
-                useNumericFieldTypes);
+                FieldMapping.LOWER_CAMEL_CASE,
+                true,
+                true,
+                true);
+    }
+
+    private GeneratorConfig getConfig(String delimiter, String javaClassName, FieldMapping fieldMapping,
+                                      boolean isHeader, boolean useNumericFieldTypes, boolean usePrimitiveTypesWherePossible) {
+        return new GeneratorConfig(delimiter, javaClassName, fieldMapping, isHeader, useNumericFieldTypes, usePrimitiveTypesWherePossible);
     }
 }

@@ -1,4 +1,4 @@
-name;age;tax;mixed-bag
-johan;32;50.4;1
-anders;50;50;2.2
-julia;5;50;Hello
+"NAME";"AGE";"TAX";"MIXED_BAG"
+"johan";"32";"50.4";"1"
+"anders";50;"50";"2.2"
+"julia";"5";"50";"Hello"
