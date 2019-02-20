@@ -9,7 +9,7 @@ public class Jonsson {
 	private String name;
 
 	@DataField(pos=2)
-	private Integer age;
+	private String age;
 
 	@DataField(pos=3)
 	private Float tax;

@@ -9,7 +9,7 @@ public class BindyPerson {
 	private String name;
 
 	@DataField(pos=2, columnName="AGE")
-	private int age;
+	private String age;
 
 	@DataField(pos=3, columnName="TAX")
 	private float tax;
