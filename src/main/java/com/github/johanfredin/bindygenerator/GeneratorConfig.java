@@ -8,17 +8,20 @@ public class GeneratorConfig {
     private final boolean isHeader;
     private final boolean useNumericFieldTypes;
     private final boolean usePrimitiveTypesWherePossible;
+    private final boolean includeColumnName;
 
 
     public GeneratorConfig(String delimiter, String javaClassName,
                            FieldMapping fieldMapping, boolean isHeader,
-                           boolean useNumericFieldTypes, boolean usePrimitiveTypesWherePossible) {
+                           boolean useNumericFieldTypes, boolean usePrimitiveTypesWherePossible,
+                           boolean includeColumnName) {
         this.delimiter = delimiter;
         this.javaClassName = javaClassName;
         this.fieldMapping = fieldMapping;
         this.isHeader = isHeader;
         this.useNumericFieldTypes = useNumericFieldTypes;
         this.usePrimitiveTypesWherePossible = usePrimitiveTypesWherePossible;
+        this.includeColumnName = includeColumnName;
     }
 
     public String getDelimiter() {
@@ -45,6 +48,10 @@ public class GeneratorConfig {
         return usePrimitiveTypesWherePossible;
     }
 
+    public boolean isIncludeColumnName() {
+        return includeColumnName;
+    }
+
     @Override
     public String toString() {
         return "GeneratorConfig{" +
@@ -54,6 +61,7 @@ public class GeneratorConfig {
                 ", isHeader=" + isHeader +
                 ", useNumericFieldTypes=" + useNumericFieldTypes +
                 ", usePrimitiveTypesWherePossible=" + usePrimitiveTypesWherePossible +
+                ", includeColumnName=" + includeColumnName +
                 '}';
     }
 }

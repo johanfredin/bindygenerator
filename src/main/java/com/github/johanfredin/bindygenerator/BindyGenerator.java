@@ -26,6 +26,10 @@ class BindyGenerator {
         this.generatorConfig = generatorConfig;
     }
 
+    void setJavaSourceFilePath(Path javaSourceFilePath) {
+        this.javaSourceFilePath = javaSourceFilePath;
+    }
+
     void generate() {
         Map<Integer, BindyField> fieldMapFromFile = getFieldMapFromFile();
         PrintWriter pw = null;
@@ -42,8 +46,14 @@ class BindyGenerator {
             pw.println();
             // Begin iterating the fields
             for (BindyField field : fieldMapFromFile.values()) {
-                pw.println("\t@DataField(pos=" + (field.getPos() + 1) + ")"); // Bindy field positions start at 1!
-                pw.println("\tprivate " + field.getType() + " " + field.getName() + ";");
+                pw.print("\t@DataField(pos=" + (field.getPos() + 1)); // Bindy field positions start at 1!
+                if(generatorConfig.isIncludeColumnName()) {
+                    pw.print(", columnName=\"" + field.getDataSourceName() + "\")");
+                } else {
+                    pw.print(")");
+                }
+                pw.println();
+                pw.println("\tprivate " + field.getType() + " " + field.getJavaFieldName() + ";");
                 pw.println();
             }
             pw.println("}");
@@ -64,7 +74,7 @@ class BindyGenerator {
             e.printStackTrace();
         }
         assert sc != null;
-        String[] header = getHeader(sc.nextLine());
+        DatasetHeader[] header = getHeader(sc.nextLine());
         Map<Integer, BindyField> bindyFieldMap = new HashMap<>();
         Map<Integer, Set<FieldType>> fieldTypesMap = new HashMap<>();
 
@@ -77,7 +87,8 @@ class BindyGenerator {
                 BindyField bindyField = bindyFieldMap.get(index);
                 if (bindyField == null) {
                     bindyField = new BindyField();
-                    bindyField.setName(header[index]);
+                    bindyField.setDataSourceName(header[index].getDataSourceName());
+                    bindyField.setJavaFieldName(header[index].getJavaFieldName());
                     bindyField.setPos(index);
                 }
 
@@ -96,50 +107,55 @@ class BindyGenerator {
         }
 
         // Now set the highest priority field for the BindyFieldsMap
-        if (generatorConfig.isUseNumericFieldTypes()) {
-            bindyFieldMap.values()
-                    .forEach(e -> {
-                        BindyField bindyField = bindyFieldMap.get(e.getPos());
-                        Set<FieldType> fieldTypes = fieldTypesMap.get(e.getPos());
+        bindyFieldMap.values()
+                .forEach(e -> {
+                    BindyField bindyField = bindyFieldMap.get(e.getPos());
+                    Set<FieldType> fieldTypes = fieldTypesMap.get(e.getPos());
+                    if(generatorConfig.isUseNumericFieldTypes()) {
                         Optional<FieldType> first = fieldTypes
                                 .stream()
                                 .sorted()
                                 .findFirst();
                         bindyField.setType(first.orElseThrow(RuntimeException::new).getType());
-                    });
-        }
+                    } else {
+                        bindyField.setType(String.class.getSimpleName());
+                    }
+                });
         return bindyFieldMap;
     }
 
-    private String[] getHeader(String nextLine) {
+    private DatasetHeader[] getHeader(String nextLine) {
         final String[] header = nextLine.split(generatorConfig.getDelimiter());
         return IntStream.range(0, header.length)
-                .mapToObj(i -> generatorConfig.isHeader() ? getHeaderField(header[i], generatorConfig.getFieldMapping()) : "COLUMN_" + i)
-                .toArray(String[]::new);
+                .mapToObj(i -> generatorConfig.isHeader() ?
+                        getHeaderField(header[i], generatorConfig.getFieldMapping()) :
+                        new DatasetHeader("COLUMN_" + i, "COLUMN_" + i))
+                .toArray(DatasetHeader[]::new);
     }
 
-    String getHeaderField(String headerField, FieldMapping fieldMapping) {
+    DatasetHeader getHeaderField(String headerField, FieldMapping fieldMapping) {
         // Start by removing quote chars (always do this)
-        String result = headerField
+        String cleanedHeaderField = headerField
                 .trim()
                 .replace("\"", "")
                 .replace("'", "");
 
         if (fieldMapping == FieldMapping.AS_IS) {
             // When mapping=AS_IS then check for illegal delimiters
-            List<Character> illegalDelimiters = Arrays.asList('.',' ', '-');
-            for(Character c : result.toCharArray()) {
-                if(illegalDelimiters.contains(c)) {
+            List<Character> illegalDelimiters = Arrays.asList('.', ' ', '-');
+            for (Character c : cleanedHeaderField.toCharArray()) {
+                if (illegalDelimiters.contains(c)) {
                     Character illegalCharacter = illegalDelimiters.get(illegalDelimiters.indexOf(c));
                     throw new RuntimeException(
                             "Illegal character=" + illegalCharacter + " found in field=" + headerField + ". This needs to be fixed");
                 }
             }
-            return result;
+            // Make datasource name and java field name the same when mapping=AS_IS
+            return new DatasetHeader(cleanedHeaderField, cleanedHeaderField);
         }
 
         // Replace any separation chars to white space so we can capitalize
-        result = result
+        String result = cleanedHeaderField
                 .toLowerCase()
                 .replace(".", " ")
                 .replace("_", " ")
@@ -154,7 +170,8 @@ class BindyGenerator {
         // Now convert first character to lower case
         char[] chars = result.toCharArray();
         chars[0] = Character.toLowerCase(chars[0]);
-        return new String(chars);
+        String lowerCamelCaseField = new String(chars);
+        return new DatasetHeader(cleanedHeaderField, lowerCamelCaseField);
     }
 
     private FieldType getType(String column) {
@@ -176,6 +193,6 @@ class BindyGenerator {
                 return new FieldType(priority, type);
             }
         }
-        return new FieldType((byte) 1, String.class.getSimpleName());
+        return new FieldType(1, String.class.getSimpleName());
     }
 }

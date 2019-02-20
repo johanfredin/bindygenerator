@@ -2,19 +2,19 @@ package com.github.johanfredin.bindygenerator;
 
 public class FieldType implements Comparable<FieldType>{
 
-    private byte priority;
+    private int priority;
     private String type;
 
-    public FieldType(byte priority, String type) {
+    public FieldType(int priority, String type) {
         this.priority = priority;
         this.type = type;
     }
 
-    public byte getPriority() {
+    public int getPriority() {
         return priority;
     }
 
-    public void setPriority(byte priority) {
+    public void setPriority(int priority) {
         this.priority = priority;
     }
 

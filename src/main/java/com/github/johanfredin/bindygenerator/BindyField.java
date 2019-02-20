@@ -3,19 +3,21 @@ package com.github.johanfredin.bindygenerator;
 public class BindyField {
 
     private int pos;
-    private String type = String.class.getSimpleName();
-    private String name;
+    private String type;
+    private String dataSourceName;
+    private String javaFieldName;
 
     public BindyField(){}
 
-    public BindyField(String name, String type, int pos) {
-        this.name = name;
+    public BindyField(String dataSourceName, String type, int pos, String javaFieldName) {
+        this.dataSourceName = dataSourceName;
         this.type = type;
         this.pos = pos;
+        this.javaFieldName = javaFieldName;
     }
 
-    public String getName() {
-        return name;
+    public String getDataSourceName() {
+        return dataSourceName;
     }
 
     public String getType() {
@@ -34,8 +36,16 @@ public class BindyField {
         this.pos = pos;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setDataSourceName(String dataSourceName) {
+        this.dataSourceName = dataSourceName;
+    }
+
+    public String getJavaFieldName() {
+        return javaFieldName;
+    }
+
+    public void setJavaFieldName(String javaFieldName) {
+        this.javaFieldName = javaFieldName;
     }
 
     @Override
@@ -43,7 +53,8 @@ public class BindyField {
         return "BindyField{" +
                 "pos=" + pos +
                 ", type='" + type + '\'' +
-                ", name='" + name + '\'' +
+                ", dataSourceName='" + dataSourceName + '\'' +
+                ", javaFieldName='" + javaFieldName + '\'' +
                 '}';
     }
 }
