@@ -13,12 +13,12 @@ import java.util.stream.IntStream;
 class BindyGenerator {
 
     private GeneratorConfig generatorConfig;
-    private File file;
+    private Path pathToDataSource;
     private Path javaSourceFilePath;
 
-    BindyGenerator(GeneratorConfig generatorConfig, File sourceFile, Path javaSourceFilePath) {
+    BindyGenerator(GeneratorConfig generatorConfig, Path pathToDataSource, Path javaSourceFilePath) {
         this.generatorConfig = generatorConfig;
-        this.file = sourceFile;
+        this.pathToDataSource = pathToDataSource;
         this.javaSourceFilePath = javaSourceFilePath;
     }
 
@@ -69,7 +69,7 @@ class BindyGenerator {
     Map<Integer, BindyField> getFieldMapFromFile() {
         Scanner sc = null;
         try {
-            sc = new Scanner(file);
+            sc = new Scanner(pathToDataSource.toFile());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

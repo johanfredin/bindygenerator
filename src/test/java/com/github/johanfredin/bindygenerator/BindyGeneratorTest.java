@@ -27,7 +27,7 @@ public class BindyGeneratorTest {
     @Before
     public void init() {
         GeneratorConfig config = getConfig();
-        File soure = Paths.get("src/test/resources/person.csv").toFile();
+        Path soure = Paths.get("src/test/resources/person.csv");
         this.expectedWithColumns = Paths.get("src/test/resources/ExpectedResult_WithColumnNames.java");
         this.expectedWitoutColumns = Paths.get("src/test/resources/ExpectedResult_WithoutColumnNames.java");
         this.javaSourceFilePath = Paths.get("src/test/resources/BindyPerson.java");
