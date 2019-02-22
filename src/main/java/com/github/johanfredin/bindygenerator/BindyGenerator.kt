@@ -2,16 +2,15 @@ package com.github.johanfredin.bindygenerator
 
 import org.apache.commons.lang3.math.NumberUtils
 import org.apache.commons.text.WordUtils
-
-import java.io.File
 import java.io.FileNotFoundException
 import java.io.PrintWriter
 import java.nio.file.Path
 import java.util.*
-import java.util.function.Supplier
-import java.util.stream.IntStream
+import kotlin.collections.ArrayList
 
-internal class BindyGenerator(private var generatorConfig: GeneratorConfig?, private val pathToDataSource: Path, private var javaSourceFilePath: Path?) {
+internal class BindyGenerator(var generatorConfig: GeneratorConfig,
+                              val pathToDataSource: Path,
+                              var javaSourceFilePath: Path) {
 
     /**
      * Fetch the context from the file and decide field types.
@@ -30,17 +29,20 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig?, pri
             assert(sc != null)
             val header = getHeader(sc!!.nextLine())
             val bindyFieldMap = HashMap<Int, BindyField>()
-            val fieldTypesMap = HashMap<Int, Set<FieldType>>()
+            val fieldTypesMap = HashMap<Int, MutableSet<FieldType>>()
+
             while (sc.hasNextLine()) {
+
                 val currentLine = sc.nextLine()
-                val record = currentLine.split(generatorConfig!!.delimiter.toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()
+                val record = currentLine.split(this.generatorConfig.delimiter.toRegex()).dropLastWhile(String::isEmpty).toTypedArray()
                 var index = 0
-                for (column in record) {
+
+                record.forEach { column ->
                     var bindyField = bindyFieldMap[index]
                     if (bindyField == null) {
                         bindyField = BindyField(index, header[index].dataSourceName, header[index].javaFieldName)
                     }
-                    if (generatorConfig!!.isUseNumericFieldTypes) {
+                    if (generatorConfig.isUseNumericFieldTypes) {
                         var fieldTypesAtIndex: MutableSet<FieldType>? = fieldTypesMap[index]
                         if (fieldTypesAtIndex == null) {
                             fieldTypesAtIndex = HashSet()
@@ -56,45 +58,38 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig?, pri
                     .forEach { e ->
                         val bindyField = bindyFieldMap[e.pos]
                         val fieldTypes = fieldTypesMap[e.pos]
-                        if (generatorConfig!!.isUseNumericFieldTypes) {
-                            val first = fieldTypes
-                                    .stream()
-                                    .sorted()
-                                    .findFirst()
-                            bindyField.type = first.orElseThrow<RuntimeException>(::RuntimeException).type
-                        } else {
-                            bindyField.type = String::class.java!!.getSimpleName()
+                        when {
+                            this.generatorConfig.isUseNumericFieldTypes -> {
+                                val first = fieldTypes
+                                        ?.stream()
+                                        ?.sorted()
+                                        ?.findFirst()
+                                bindyField?.type ?: first?.orElseThrow<RuntimeException>(::RuntimeException)?.type
+                            }
+                            else -> bindyField?.type ?: String::class.java.simpleName
                         }
                     }
             return bindyFieldMap
         }
 
-    fun setGeneratorConfig(generatorConfig: GeneratorConfig) {
-        this.generatorConfig = generatorConfig
-    }
-
-    fun setJavaSourceFilePath(javaSourceFilePath: Path) {
-        this.javaSourceFilePath = javaSourceFilePath
-    }
-
     fun generate() {
         val fieldMapFromFile = fieldMapFromFile
         var pw: PrintWriter? = null
         try {
-            val javaSourceFile = this.javaSourceFilePath!!.toFile()
+            val javaSourceFile = this.javaSourceFilePath.toFile()
             pw = PrintWriter(javaSourceFile)
 
             pw.println()
             pw.println("import org.apache.camel.dataformat.bindy.annotation.CsvRecord;")
             pw.println("import org.apache.camel.dataformat.bindy.annotation.DataField;")
             pw.println()
-            pw.println("@CsvRecord(separator = \"" + generatorConfig!!.delimiter + "\")")
-            pw.println("public class " + generatorConfig!!.javaClassName + " {")
+            pw.println("@CsvRecord(separator = \"" + generatorConfig.delimiter + "\")")
+            pw.println("public class " + generatorConfig.javaClassName + " {")
             pw.println()
             // Begin iterating the fields
             for (field in fieldMapFromFile.values) {
                 pw.print("\t@DataField(pos=" + (field.pos + 1)) // Bindy field positions start at 1!
-                if (generatorConfig!!.isIncludeColumnName) {
+                if (generatorConfig.isIncludeColumnName) {
                     pw.print(", columnName=\"" + field.dataSourceName + "\")")
                 } else {
                     pw.print(")")
@@ -111,16 +106,17 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig?, pri
         }
     }
 
-    private fun getHeader(nextLine: String): Array<DatasetHeader> {
-        val header = nextLine.split(generatorConfig!!.delimiter.toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()
-        return IntStream.range(0, header.size)
-                .mapToObj { i ->
-                    if (generatorConfig!!.isHeader)
-                        getHeaderField(header[i], generatorConfig!!.fieldMapping)
-                    else
-                        DatasetHeader("COLUMN_$i", "COLUMN_$i")
-                }
-                .toArray(DatasetHeader[]::new  /* Currently unsupported in Kotlin */)
+    private fun getHeader(nextLine: String): List<DatasetHeader> {
+        val header = nextLine.split(this.generatorConfig.delimiter.toRegex()).dropLastWhile(String::isEmpty)
+        val list = ArrayList<DatasetHeader>()
+        header.withIndex().forEach { (i, s) ->
+            if (this.generatorConfig.isHeader) {
+                list.add(getHeaderField(s, this.generatorConfig.fieldMapping))
+            } else {
+                list.add(DatasetHeader("COLUMN_$i", "COLUMN_$i"))
+            }
+        }
+        return list
     }
 
     fun getHeaderField(headerField: String, fieldMapping: FieldMapping): DatasetHeader {
@@ -165,25 +161,27 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig?, pri
     }
 
     private fun getType(column: String?): FieldType {
-        var column = column
-        if (column != null && !column.isEmpty()) {
-            column = column
+        var mutableColumn = column
+        if (mutableColumn != null && !mutableColumn.isEmpty()) {
+            mutableColumn = mutableColumn
                     .replace("\"", "")
                     .replace("'", "")
-            if (NumberUtils.isParsable(column)) {
-                val type: String
-                val priority: Byte
-                val isPrimitiveTypes = this.generatorConfig!!.isUsePrimitiveTypesWherePossible
-                if (column!!.contains(".")) {
-                    type = if (isPrimitiveTypes) "float" else Float::class.java!!.getSimpleName()
-                    priority = 2
-                } else {
-                    type = if (isPrimitiveTypes) "int" else Int::class.java!!.getSimpleName()
-                    priority = 3
+            when {
+                NumberUtils.isParsable(mutableColumn) -> {
+                    val type: String
+                    val priority: Byte
+                    val isPrimitiveTypes = this.generatorConfig.isUsePrimitiveTypesWherePossible
+                    if (mutableColumn.contains(".")) {
+                        type = if (isPrimitiveTypes) "float" else Float::class.java.simpleName
+                        priority = 2
+                    } else {
+                        type = if (isPrimitiveTypes) "int" else Int::class.java.simpleName
+                        priority = 3
+                    }
+                    return FieldType(priority.toInt(), type)
                 }
-                return FieldType(priority.toInt(), type)
             }
         }
-        return FieldType(1, String::class.java!!.getSimpleName())
+        return FieldType(1, String::class.java.simpleName)
     }
 }
