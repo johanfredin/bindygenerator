@@ -8,13 +8,16 @@ import java.io.FileNotFoundException
 import java.io.PrintWriter
 import java.nio.file.Path
 import java.util.*
+import java.util.function.Supplier
 import java.util.stream.IntStream
 
 internal class BindyGenerator(private var generatorConfig: GeneratorConfig?, private val pathToDataSource: Path, private var javaSourceFilePath: Path?) {
 
-    // Fetch the context from the file and decide field types.
-    // Find all possible field types for current field
-    // Now set the highest priority field for the BindyFieldsMap
+    /**
+     * Fetch the context from the file and decide field types.
+     * Find all possible field types for current field
+     * Now set the highest priority field for the BindyFieldsMap
+     */
     val fieldMapFromFile: Map<Int, BindyField>
         get() {
             var sc: Scanner? = null
@@ -33,12 +36,9 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig?, pri
                 val record = currentLine.split(generatorConfig!!.delimiter.toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()
                 var index = 0
                 for (column in record) {
-                    var bindyField: BindyField? = bindyFieldMap[index]
+                    var bindyField = bindyFieldMap[index]
                     if (bindyField == null) {
-                        bindyField = BindyField()
-                        bindyField.dataSourceName = header[index].dataSourceName
-                        bindyField.javaFieldName = header[index].javaFieldName
-                        bindyField.pos = index
+                        bindyField = BindyField(index, header[index].dataSourceName, header[index].javaFieldName)
                     }
                     if (generatorConfig!!.isUseNumericFieldTypes) {
                         var fieldTypesAtIndex: MutableSet<FieldType>? = fieldTypesMap[index]
@@ -61,7 +61,7 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig?, pri
                                     .stream()
                                     .sorted()
                                     .findFirst()
-                            bindyField.type = first.orElseThrow<RuntimeException>(Supplier<RuntimeException> { RuntimeException() }).type
+                            bindyField.type = first.orElseThrow<RuntimeException>(::RuntimeException).type
                         } else {
                             bindyField.type = String::class.java!!.getSimpleName()
                         }

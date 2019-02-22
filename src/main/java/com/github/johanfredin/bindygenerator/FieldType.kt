@@ -5,24 +5,14 @@ package com.github.johanfredin.bindygenerator
  * Holds a type and the priority of the type. E.g if field in
  * datasource is numeric on one line and a string on the next
  * then String will be used for the variable etc.
+ * @property priority the priority of the variable type
+ * @property type the variable type
  */
-class FieldType
-/**
- * Create a new instance
- * @param priority the priority of the variable type
- * @param type the variable type
- */
-internal constructor(private val priority: Int,
-                     /**
-                      * Get the type
-                      * @return the type of the variable
-                      */
-                     internal val type: String) : Comparable<FieldType> {
-
-    override fun compareTo(fieldType: FieldType): Int {
-        if (this.priority > fieldType.priority) {
+data class FieldType(val priority: Int, val type: String) : Comparable<FieldType> {
+    override fun compareTo(other: FieldType): Int {
+        if (this.priority > other.priority) {
             return 1
-        } else if (this.priority < fieldType.priority) {
+        } else if (this.priority < other.priority) {
             return -1
         }
         return 0

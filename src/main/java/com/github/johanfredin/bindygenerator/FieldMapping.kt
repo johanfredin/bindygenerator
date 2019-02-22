@@ -4,7 +4,7 @@ package com.github.johanfredin.bindygenerator
  * Enum representing user input regarding naming standard for the datasource
  * fields in the resulting java source file.
  */
-enum class FieldMapping private constructor(private val mapping: String) {
+enum class FieldMapping(private val mapping: String) {
 
     /**
      * Java variable name should be the same as it was in the datasource.
