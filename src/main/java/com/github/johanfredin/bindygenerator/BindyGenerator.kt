@@ -8,72 +8,65 @@ import java.nio.file.Path
 import java.util.*
 import kotlin.collections.ArrayList
 
-internal class BindyGenerator(var generatorConfig: GeneratorConfig,
-                              val pathToDataSource: Path,
-                              var javaSourceFilePath: Path) {
+internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
+                              private val pathToDataSource: Path,
+                              private var javaSourceFilePath: Path) {
 
     /**
      * Fetch the context from the file and decide field types.
      * Find all possible field types for current field
      * Now set the highest priority field for the BindyFieldsMap
      */
-    val fieldMapFromFile: Map<Int, BindyField>
-        get() {
-            var sc: Scanner? = null
-            try {
-                sc = Scanner(pathToDataSource.toFile())
-            } catch (e: FileNotFoundException) {
-                e.printStackTrace()
-            }
-
-            assert(sc != null)
-            val header = getHeader(sc!!.nextLine())
-            val bindyFieldMap = HashMap<Int, BindyField>()
-            val fieldTypesMap = HashMap<Int, MutableSet<FieldType>>()
-
-            while (sc.hasNextLine()) {
-
-                val currentLine = sc.nextLine()
-                val record = currentLine.split(this.generatorConfig.delimiter.toRegex()).dropLastWhile(String::isEmpty).toTypedArray()
-                var index = 0
-
-                record.forEach { column ->
-                    var bindyField = bindyFieldMap[index]
-                    if (bindyField == null) {
-                        bindyField = BindyField(index, header[index].dataSourceName, header[index].javaFieldName)
-                    }
-                    if (generatorConfig.isUseNumericFieldTypes) {
-                        var fieldTypesAtIndex: MutableSet<FieldType>? = fieldTypesMap[index]
-                        if (fieldTypesAtIndex == null) {
-                            fieldTypesAtIndex = HashSet()
-                        }
-                        fieldTypesAtIndex.add(getType(column))
-                        fieldTypesMap[index] = fieldTypesAtIndex
-                    }
-                    bindyFieldMap[index] = bindyField
-                    index++
-                }
-            }
-            bindyFieldMap.values
-                    .forEach { e ->
-                        val bindyField = bindyFieldMap[e.pos]
-                        val fieldTypes = fieldTypesMap[e.pos]
-                        when {
-                            this.generatorConfig.isUseNumericFieldTypes -> {
-                                val first = fieldTypes
-                                        ?.stream()
-                                        ?.sorted()
-                                        ?.findFirst()
-                                bindyField?.type ?: first?.orElseThrow<RuntimeException>(::RuntimeException)?.type
-                            }
-                            else -> bindyField?.type ?: String::class.java.simpleName
-                        }
-                    }
-            return bindyFieldMap
+    fun fieldMapFromFile(): Map<Int, BindyField> {
+        var sc: Scanner? = null
+        try {
+            sc = Scanner(pathToDataSource.toFile())
+        } catch (e: FileNotFoundException) {
+            e.printStackTrace()
         }
 
+        assert(sc != null)
+        val header = getHeader(sc!!.nextLine())
+        val bindyFieldMap = HashMap<Int, BindyField>()
+        val fieldTypesMap = HashMap<Int, MutableSet<FieldType>>()
+
+        while (sc.hasNextLine()) {
+
+            val currentLine = sc.nextLine()
+            val record = currentLine.split(this.generatorConfig.delimiter.toRegex()).dropLastWhile(String::isEmpty).toTypedArray()
+            var index = 0
+
+            record.forEach { column ->
+                var bindyField = bindyFieldMap[index]
+                if (bindyField == null) {
+                    bindyField = BindyField(index, header[index].dataSourceName, header[index].javaFieldName)
+                }
+                if (generatorConfig.isUseNumericFieldTypes) {
+                    var fieldTypesAtIndex: MutableSet<FieldType>? = fieldTypesMap[index]
+                    if (fieldTypesAtIndex == null) {
+                        fieldTypesAtIndex = HashSet()
+                    }
+                    fieldTypesAtIndex.add(getType(column))
+                    fieldTypesMap[index] = fieldTypesAtIndex
+                }
+                bindyFieldMap[index] = bindyField
+                index++
+            }
+        }
+        bindyFieldMap.values.forEach { e ->
+            val bindyField = bindyFieldMap[e.pos]
+            val fieldTypes = fieldTypesMap[e.pos]
+            val first = fieldTypes
+                    ?.stream()
+                    ?.sorted()
+                    ?.findFirst()
+            bindyField?.type ?: first?.orElseThrow<RuntimeException>(::RuntimeException)?.type
+        }
+        return bindyFieldMap
+    }
+
     fun generate() {
-        val fieldMapFromFile = fieldMapFromFile
+        val fieldMapFromFile = fieldMapFromFile()
         var pw: PrintWriter? = null
         try {
             val javaSourceFile = this.javaSourceFilePath.toFile()
@@ -160,8 +153,9 @@ internal class BindyGenerator(var generatorConfig: GeneratorConfig,
         return DatasetHeader(cleanedHeaderField, lowerCamelCaseField)
     }
 
-    private fun getType(column: String?): FieldType {
+    fun getType(column: String?): FieldType {
         var mutableColumn = column
+        var fieldType = FieldType(1, "String")
         if (mutableColumn != null && !mutableColumn.isEmpty()) {
             mutableColumn = mutableColumn
                     .replace("\"", "")
@@ -172,16 +166,16 @@ internal class BindyGenerator(var generatorConfig: GeneratorConfig,
                     val priority: Byte
                     val isPrimitiveTypes = this.generatorConfig.isUsePrimitiveTypesWherePossible
                     if (mutableColumn.contains(".")) {
-                        type = if (isPrimitiveTypes) "float" else Float::class.java.simpleName
+                        type = if (isPrimitiveTypes) "float" else "Float"
                         priority = 2
                     } else {
-                        type = if (isPrimitiveTypes) "int" else Int::class.java.simpleName
+                        type = if (isPrimitiveTypes) "int" else "Integer"
                         priority = 3
                     }
                     return FieldType(priority.toInt(), type)
                 }
             }
         }
-        return FieldType(1, String::class.java.simpleName)
+        return fieldType
     }
 }
