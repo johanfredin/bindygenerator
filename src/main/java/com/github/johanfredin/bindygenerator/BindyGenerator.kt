@@ -57,18 +57,22 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
             bindyFieldMap.values.forEach { e ->
                 val bindyField = bindyFieldMap[e.pos]
                 val fieldTypes = fieldTypesMap[e.pos]
-                val first = fieldTypes
-                        ?.stream()
-                        ?.sorted(Comparator.comparing(FieldType::priority))
-                        ?.findFirst()
 
-                val optionalType = first?.orElseThrow<RuntimeException>(::RuntimeException)
-                var type = optionalType?.objectTypeName
-                if(generatorConfig.isUsePrimitiveTypesWherePossible) {
-                    type = optionalType?.primitiveTypeName
+                var type = FieldType.STRING.objectTypeName
+                if(fieldTypes != null) {
+                    val first = fieldTypes
+                            .stream()
+                            .sorted(Comparator.comparing(FieldType::priority))
+                            .findFirst()
+
+                    val optionalType = first?.orElseThrow<RuntimeException>(::RuntimeException)
+                    type = optionalType?.objectTypeName!!
+                    if(generatorConfig.isUsePrimitiveTypesWherePossible) {
+                        type = optionalType.primitiveTypeName
+                    }
                 }
 
-                bindyField?.type = type!!
+                bindyField?.type = type
             }
             return bindyFieldMap
         }
