@@ -6,15 +6,15 @@ import org.apache.camel.dataformat.bindy.annotation.DataField;
 public class BindyPerson {
 
 	@DataField(pos=1, columnName="NAME")
-	private StringCompanionObject name;
+	private String name;
 
 	@DataField(pos=2, columnName="AGE")
-	private StringCompanionObject age;
+	private int age;
 
 	@DataField(pos=3, columnName="TAX")
-	private StringCompanionObject tax;
+	private float tax;
 
 	@DataField(pos=4, columnName="MIXED_BAG")
-	private StringCompanionObject mixedBag;
+	private String mixedBag;
 
 }

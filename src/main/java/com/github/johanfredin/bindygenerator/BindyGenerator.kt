@@ -60,7 +60,16 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
                     ?.stream()
                     ?.sorted()
                     ?.findFirst()
-            bindyField?.type ?: first?.orElseThrow<RuntimeException>(::RuntimeException)?.type
+
+            val fieldType = first?.orElseThrow<RuntimeException>(::RuntimeException)
+
+            bindyField?.type = when {
+                (generatorConfig.isUsePrimitiveTypesWherePossible) -> {
+                    fieldType?.primitiveTypeName!!
+                }
+                else -> fieldType?.objectTypeName!!
+            }
+
         }
         return bindyFieldMap
     }
@@ -155,27 +164,18 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
 
     fun getType(column: String?): FieldType {
         var mutableColumn = column
-        var fieldType = FieldType(1, "String")
         if (mutableColumn != null && !mutableColumn.isEmpty()) {
             mutableColumn = mutableColumn
                     .replace("\"", "")
                     .replace("'", "")
             when {
                 NumberUtils.isParsable(mutableColumn) -> {
-                    val type: String
-                    val priority: Byte
-                    val isPrimitiveTypes = this.generatorConfig.isUsePrimitiveTypesWherePossible
-                    if (mutableColumn.contains(".")) {
-                        type = if (isPrimitiveTypes) "float" else "Float"
-                        priority = 2
-                    } else {
-                        type = if (isPrimitiveTypes) "int" else "Integer"
-                        priority = 3
-                    }
-                    return FieldType(priority.toInt(), type)
+                    return if (mutableColumn.contains(".")) {
+                        FieldType.FLOAT
+                    } else FieldType.INTEGER
                 }
             }
         }
-        return fieldType
+        return FieldType.STRING
     }
 }

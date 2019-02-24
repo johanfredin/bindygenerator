@@ -95,17 +95,17 @@ class BindyGeneratorTest {
         assertEquals("Field name=tax", "tax", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=mixedBag", "mixedBag", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field type=String", String::class.java.simpleName, fieldMapFromFile[0]?.type)
-        assertEquals("Field type=Integer", Int::class.java.simpleName, fieldMapFromFile[1]?.type)
-        assertEquals("Field type=Float when mixed int and decimal types",
+        assertEquals("Field objectTypeName=String", String::class.java.simpleName, fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=Integer", Int::class.java.simpleName, fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=Float when mixed int and decimal types",
                 Float::class.java.simpleName, fieldMapFromFile[2]?.type)
-        assertEquals("Field type=String when at least one field is a String",
+        assertEquals("Field objectTypeName=String when at least one field is a String",
                 String::class.java.simpleName, fieldMapFromFile[3]?.type)
 
-        assertEquals(0, fieldMapFromFile[0]?.pos?.toLong())
-        assertEquals(1, fieldMapFromFile[1]?.pos?.toLong())
-        assertEquals(2, fieldMapFromFile[2]?.pos?.toLong())
-        assertEquals(3, fieldMapFromFile[3]?.pos?.toLong())
+        assertEquals(0, fieldMapFromFile[0]?.pos)
+        assertEquals(1, fieldMapFromFile[1]?.pos)
+        assertEquals(2, fieldMapFromFile[2]?.pos)
+        assertEquals(3, fieldMapFromFile[3]?.pos)
     }
 
     @Test
@@ -127,17 +127,17 @@ class BindyGeneratorTest {
         assertEquals("Field name=tax", "tax", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=mixedBag", "mixedBag", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field type=String", String::class.java.simpleName, fieldMapFromFile[0]?.type)
-        assertEquals("Field type=int", "int", fieldMapFromFile[1]?.type)
-        assertEquals("Field type=float when mixed int and decimal types",
+        assertEquals("Field objectTypeName=String", String::class.java.simpleName, fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=int", "int", fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=float when mixed int and decimal types",
                 "float", fieldMapFromFile[2]?.type)
-        assertEquals("Field type=String when at least one field is a String",
+        assertEquals("Field objectTypeName=String when at least one field is a String",
                 String::class.java.simpleName, fieldMapFromFile[3]?.type)
 
-        assertEquals(0, fieldMapFromFile[0]?.pos?.toLong())
-        assertEquals(1, fieldMapFromFile[1]?.pos?.toLong())
-        assertEquals(2, fieldMapFromFile[2]?.pos?.toLong())
-        assertEquals(3, fieldMapFromFile[3]?.pos?.toLong())
+        assertEquals(0, fieldMapFromFile[0]?.pos)
+        assertEquals(1, fieldMapFromFile[1]?.pos)
+        assertEquals(2, fieldMapFromFile[2]?.pos)
+        assertEquals(3, fieldMapFromFile[3]?.pos)
     }
 
     @Test
@@ -159,16 +159,16 @@ class BindyGeneratorTest {
         assertEquals("Field name=COLUMN_2", "COLUMN_2", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=COLUMN_3", "COLUMN_3", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field type=String", String::class.java.simpleName, fieldMapFromFile[0]?.type)
-        assertEquals("Field type=String", String::class.java.simpleName, fieldMapFromFile[1]?.type)
-        assertEquals("Field type=String", String::class.java.simpleName, fieldMapFromFile[2]?.type)
-        assertEquals("Field type=String when at least one field is a String",
+        assertEquals("Field objectTypeName=String", String::class.java.simpleName, fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=String", String::class.java.simpleName, fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=String", String::class.java.simpleName, fieldMapFromFile[2]?.type)
+        assertEquals("Field objectTypeName=String when at least one field is a String",
                 String::class.java.simpleName, fieldMapFromFile[3]?.type)
 
-        assertEquals(0, fieldMapFromFile[0]?.pos?.toLong())
-        assertEquals(1, fieldMapFromFile[1]?.pos?.toLong())
-        assertEquals(2, fieldMapFromFile[2]?.pos?.toLong())
-        assertEquals(3, fieldMapFromFile[3]?.pos?.toLong())
+        assertEquals(0, fieldMapFromFile[0]?.pos)
+        assertEquals(1, fieldMapFromFile[1]?.pos)
+        assertEquals(2, fieldMapFromFile[2]?.pos)
+        assertEquals(3, fieldMapFromFile[3]?.pos)
     }
 
     @Test
@@ -190,17 +190,17 @@ class BindyGeneratorTest {
         assertEquals("Field name=COLUMN_2", "COLUMN_2", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=COLUMN_3", "COLUMN_3", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field type=String", "String", fieldMapFromFile[0]?.type)
-        assertEquals("Field type=int", "int", fieldMapFromFile[1]?.type)
-        assertEquals("Field type=float when mixed int and decimal types",
+        assertEquals("Field objectTypeName=String", "String", fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=int", "int", fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=float when mixed int and decimal types",
                 "float", fieldMapFromFile[2]?.type)
-        assertEquals("Field type=String when at least one field is a String",
+        assertEquals("Field objectTypeName=String when at least one field is a String",
                 String::class.java.simpleName, fieldMapFromFile[3]?.type)
 
-        assertEquals(0, fieldMapFromFile[0]?.pos?.toLong())
-        assertEquals(1, fieldMapFromFile[1]?.pos?.toLong())
-        assertEquals(2, fieldMapFromFile[2]?.pos?.toLong())
-        assertEquals(3, fieldMapFromFile[3]?.pos?.toLong())
+        assertEquals(0, fieldMapFromFile[0]?.pos)
+        assertEquals(1, fieldMapFromFile[1]?.pos)
+        assertEquals(2, fieldMapFromFile[2]?.pos)
+        assertEquals(3, fieldMapFromFile[3]?.pos)
     }
 
     @Test
@@ -233,9 +233,9 @@ class BindyGeneratorTest {
     @Test
     fun testGetFieldType_PrimitiveTypes() {
         val generator = getGenerator()
-        assertEquals(FieldType(1, "String"), generator.getType("Hello"))
-        assertEquals(FieldType(3, "int"), generator.getType("25"))
-        assertEquals(FieldType(2, "float"), generator.getType("24.5"))
+        assertEquals(FieldType.STRING, generator.getType("Hello"))
+        assertEquals(FieldType.INTEGER, generator.getType("25"))
+        assertEquals(FieldType.FLOAT, generator.getType("24.5"))
     }
 
     @Test
@@ -249,9 +249,9 @@ class BindyGeneratorTest {
                 usePrimitiveTypesWherePossible = false,
                 includeColumnName = true)
         val generator = getGenerator(config)
-        assertEquals(FieldType(1, "String"), generator.getType("Hello"))
-        assertEquals(FieldType(3, "Integer"), generator.getType("25"))
-        assertEquals(FieldType(2, "Float"), generator.getType("24.5"))
+        assertEquals(FieldType.STRING, generator.getType("Hello"))
+        assertEquals(FieldType.INTEGER, generator.getType("25"))
+        assertEquals(FieldType.FLOAT, generator.getType("24.5"))
     }
 
     private fun getConfig(delimiter: String = ";",

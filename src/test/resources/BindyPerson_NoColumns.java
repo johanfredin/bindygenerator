@@ -6,15 +6,15 @@ import org.apache.camel.dataformat.bindy.annotation.DataField;
 public class Jonsson {
 
 	@DataField(pos=1)
-	private StringCompanionObject name;
+	private String name;
 
 	@DataField(pos=2)
-	private StringCompanionObject age;
+	private Integer age;
 
 	@DataField(pos=3)
-	private StringCompanionObject tax;
+	private Float tax;
 
 	@DataField(pos=4)
-	private StringCompanionObject mixedBag;
+	private String mixedBag;
 
 }
