@@ -10,4 +10,4 @@ package com.github.johanfredin.bindygenerator
  * @property javaFieldName Set the name of the java variable based on the datasource field name.
  */
 data class BindyField(val pos: Int, val dataSourceName: String,
-                      val javaFieldName: String, var type: String=String.javaClass.simpleName)
+                      val javaFieldName: String, var type: String = FieldType.STRING.objectTypeName)

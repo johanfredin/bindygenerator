@@ -88,19 +88,19 @@ class BindyGeneratorTest {
                 includeColumnName = true)
         val generator = getGenerator(config)
 
-        val fieldMapFromFile = generator.fieldMapFromFile()
+        val fieldMapFromFile = generator.fieldMapFromFile
         assertEquals("Size=4", 4, fieldMapFromFile.size.toLong())
         assertEquals("Field name=name", "name", fieldMapFromFile[0]?.javaFieldName)
         assertEquals("Field name=age", "age", fieldMapFromFile[1]?.javaFieldName)
         assertEquals("Field name=tax", "tax", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=mixedBag", "mixedBag", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field objectTypeName=String", String::class.java.simpleName, fieldMapFromFile[0]?.type)
-        assertEquals("Field objectTypeName=Integer", Int::class.java.simpleName, fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=String", FieldType.STRING.objectTypeName, fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=Integer", FieldType.INTEGER.objectTypeName, fieldMapFromFile[1]?.type)
         assertEquals("Field objectTypeName=Float when mixed int and decimal types",
-                Float::class.java.simpleName, fieldMapFromFile[2]?.type)
+                FieldType.FLOAT.objectTypeName, fieldMapFromFile[2]?.type)
         assertEquals("Field objectTypeName=String when at least one field is a String",
-                String::class.java.simpleName, fieldMapFromFile[3]?.type)
+                FieldType.STRING.objectTypeName, fieldMapFromFile[3]?.type)
 
         assertEquals(0, fieldMapFromFile[0]?.pos)
         assertEquals(1, fieldMapFromFile[1]?.pos)
@@ -119,7 +119,7 @@ class BindyGeneratorTest {
                 usePrimitiveTypesWherePossible = true,
                 includeColumnName = true)
 
-        val fieldMapFromFile = getGenerator(config).fieldMapFromFile()
+        val fieldMapFromFile = getGenerator(config).fieldMapFromFile
 
         assertEquals("Size=4", 4, fieldMapFromFile.size.toLong())
         assertEquals("Field name=name", "name", fieldMapFromFile[0]?.javaFieldName)
@@ -151,7 +151,7 @@ class BindyGeneratorTest {
                 usePrimitiveTypesWherePossible = true,
                 includeColumnName = true)
 
-        val fieldMapFromFile = getGenerator(config).fieldMapFromFile()
+        val fieldMapFromFile = getGenerator(config).fieldMapFromFile
 
         assertEquals("Size=4", 4, fieldMapFromFile.size.toLong())
         assertEquals("Field name=COLUMN_0", "COLUMN_0", fieldMapFromFile[0]?.javaFieldName)
@@ -182,7 +182,7 @@ class BindyGeneratorTest {
                 usePrimitiveTypesWherePossible = true,
                 includeColumnName = true)
 
-        val fieldMapFromFile = getGenerator(config).fieldMapFromFile()
+        val fieldMapFromFile = getGenerator(config).fieldMapFromFile
 
         assertEquals("Size=4", 4, fieldMapFromFile.size.toLong())
         assertEquals("Field name=COLUMN_0", "COLUMN_0", fieldMapFromFile[0]?.javaFieldName)
@@ -190,12 +190,12 @@ class BindyGeneratorTest {
         assertEquals("Field name=COLUMN_2", "COLUMN_2", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=COLUMN_3", "COLUMN_3", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field objectTypeName=String", "String", fieldMapFromFile[0]?.type)
-        assertEquals("Field objectTypeName=int", "int", fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=String", FieldType.STRING.primitiveTypeName, fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=int", FieldType.INTEGER.primitiveTypeName, fieldMapFromFile[1]?.type)
         assertEquals("Field objectTypeName=float when mixed int and decimal types",
-                "float", fieldMapFromFile[2]?.type)
+                FieldType.FLOAT.primitiveTypeName, fieldMapFromFile[2]?.type)
         assertEquals("Field objectTypeName=String when at least one field is a String",
-                String::class.java.simpleName, fieldMapFromFile[3]?.type)
+                FieldType.STRING.primitiveTypeName, fieldMapFromFile[3]?.type)
 
         assertEquals(0, fieldMapFromFile[0]?.pos)
         assertEquals(1, fieldMapFromFile[1]?.pos)
