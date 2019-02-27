@@ -6,11 +6,21 @@ import java.io.FileNotFoundException
 import java.io.PrintWriter
 import java.nio.file.Path
 import java.util.*
+import java.util.logging.Logger
 import kotlin.collections.ArrayList
 
+/**
+ * Main class that uses all the other enums and data classes to map an input file
+ * to a bindy mapped java class.
+ * @property generatorConfig the configuration to use
+ * @property pathToDataSource the path to the input data source
+ * @property javaSourceFilePath where the resulting java source file will end up.
+ */
 internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
                               private val pathToDataSource: Path,
                               private var javaSourceFilePath: Path) {
+
+    val log: Logger = Logger.getLogger(javaClass.name)
 
     /**
      * Fetch the context from the file and decide field types.
@@ -27,6 +37,7 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
             }
 
             assert(sc != null)
+            log.info("Parsing file at $pathToDataSource")
             val header = getHeader(sc!!.nextLine())
             val bindyFieldMap = HashMap<Int, BindyField>()
             val fieldTypesMap = HashMap<Int, MutableSet<FieldType>>()
@@ -78,6 +89,7 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
         }
 
     fun generate() {
+        log.info("Selected configuration=$generatorConfig")
         val fieldMapFromFile = this.fieldMapFromFile
         var pw: PrintWriter? = null
         try {
@@ -103,8 +115,10 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
                 pw.println()
                 pw.println("\tprivate " + field.type + " " + field.javaFieldName + ";")
                 pw.println()
+                log.info("Field added, type=${field.type}, name=${field.javaFieldName}")
             }
             pw.println("}")
+            log.info("java source file $javaSourceFile created")
         } catch (ex: Exception) {
             ex.printStackTrace()
         } finally {
@@ -122,6 +136,7 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
                 list.add(DatasetHeader("COLUMN_$i", "COLUMN_$i"))
             }
         }
+        log.info("Header row=${Arrays.toString(list.toArray())}")
         return list
     }
 
