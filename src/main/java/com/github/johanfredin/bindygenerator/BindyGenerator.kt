@@ -20,7 +20,7 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
                               private val pathToDataSource: Path,
                               private var javaSourceFilePath: Path) {
 
-    val log: Logger = Logger.getLogger(javaClass.name)
+    private val log: Logger = Logger.getLogger(javaClass.name)
 
     /**
      * Fetch the context from the file and decide field types.
@@ -29,14 +29,7 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
      */
     val fieldMapFromFile: Map<Int, BindyField>
         get() {
-            var sc: Scanner? = null
-            try {
-                sc = Scanner(pathToDataSource.toFile())
-            } catch (e: FileNotFoundException) {
-                e.printStackTrace()
-            }
-
-            assert(sc != null)
+            val sc = Scanner(pathToDataSource.toFile())
             log.info("Parsing file at $pathToDataSource")
             val header = getHeader(sc!!.nextLine())
             val bindyFieldMap = HashMap<Int, BindyField>()
@@ -53,14 +46,12 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
                     if (bindyField == null) {
                         bindyField = BindyField(index, header[index].dataSourceName, header[index].javaFieldName)
                     }
-                    if (generatorConfig.isUseNumericFieldTypes) {
-                        var fieldTypesAtIndex: MutableSet<FieldType>? = fieldTypesMap[index]
-                        if (fieldTypesAtIndex == null) {
-                            fieldTypesAtIndex = HashSet()
-                        }
-                        fieldTypesAtIndex.add(getType(column))
-                        fieldTypesMap[index] = fieldTypesAtIndex
+                    var fieldTypesAtIndex: MutableSet<FieldType>? = fieldTypesMap[index]
+                    if (fieldTypesAtIndex == null) {
+                        fieldTypesAtIndex = HashSet()
                     }
+                    fieldTypesAtIndex.add(getType(column))
+                    fieldTypesMap[index] = fieldTypesAtIndex
                     bindyFieldMap[index] = bindyField
                     index++
                 }
@@ -70,7 +61,7 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
                 val fieldTypes = fieldTypesMap[e.pos]
 
                 var type = FieldType.STRING.objectTypeName
-                if(fieldTypes != null) {
+                if (fieldTypes != null) {
                     val first = fieldTypes
                             .stream()
                             .sorted(Comparator.comparing(FieldType::priority))
@@ -78,9 +69,6 @@ internal class BindyGenerator(private var generatorConfig: GeneratorConfig,
 
                     val optionalType = first?.orElseThrow<RuntimeException>(::RuntimeException)
                     type = optionalType?.objectTypeName!!
-                    if(generatorConfig.isUsePrimitiveTypesWherePossible) {
-                        type = optionalType.primitiveTypeName
-                    }
                 }
 
                 bindyField?.type = type

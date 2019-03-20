@@ -14,12 +14,4 @@ enum class FieldType(val priority: Int, val objectTypeName: String, val primitiv
     FLOAT(2, "Float", "float"),
     INTEGER(3, "Integer", "int");
 
-//        override fun compareTo(other: FieldType): Int {
-//            if (this.priority > other.priority) {
-//                return 1
-//            } else if (this.priority < other.priority) {
-//                return -1
-//            }
-//            return 0
-//        }
 }
