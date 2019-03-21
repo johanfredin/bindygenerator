@@ -6,9 +6,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import java.io.FileNotFoundException
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.*
 
 @RunWith(JUnit4::class)
 class BindyGeneratorTest {
@@ -23,24 +23,7 @@ class BindyGeneratorTest {
     @Throws(FileNotFoundException::class)
     fun testGenerate() {
         getGenerator().generate()
-        val result = javaSourceFilePath.toFile()
-        val expectedFile = expectedWithColumns.toFile()
-
-        var resultContent = ""
-        var sc = Scanner(result)
-        while (sc.hasNextLine()) {
-            resultContent += sc.nextLine()
-        }
-        sc.close()
-
-        var expectedFileContent = ""
-        sc = Scanner(expectedFile)
-        while (sc.hasNextLine()) {
-            expectedFileContent += sc.nextLine()
-        }
-        sc.close()
-
-        assertEquals("File content is the same", resultContent, expectedFileContent)
+        verifyResultFileLooksTheSameAsExpected(javaSourceFilePath, expectedWithColumns)
     }
 
     @Test
@@ -50,31 +33,26 @@ class BindyGeneratorTest {
                 delimiter = ";",
                 javaClassName = "Jonsson",
                 fieldMapping = FieldMapping.LOWER_CAMEL_CASE,
-                includeColumnName = true,
-                isHeader = false,
+                includeColumnName = false,
+                isHeader = true,
                 integerType = IntegerType.INTEGER,
                 decimalType = DecimalType.FLOAT,
                 stringType = StringType.STRING)
 
         val generator = getGenerator(config, source, javaSourceFilePathNoColumns)
         generator.generate()
-        val result = javaSourceFilePathNoColumns.toFile()
-        val expectedFile = expectedWithoutColumns.toFile()
+
+        verifyResultFileLooksTheSameAsExpected(javaSourceFilePathNoColumns, expectedWithoutColumns)
+    }
+
+    private fun verifyResultFileLooksTheSameAsExpected(javaSourceFilePath: Path, expectedWithColumns: Path) {
 
         var resultContent = ""
-        var sc = Scanner(result)
-        while (sc.hasNextLine()) {
-            resultContent += sc.nextLine()
-        }
-        sc.close()
-
+        Files.lines(javaSourceFilePath)
+                .forEach{line -> resultContent += line}
         var expectedFileContent = ""
-        sc = Scanner(expectedFile)
-        while (sc.hasNextLine()) {
-            expectedFileContent += sc.nextLine()
-        }
-        sc.close()
-
+        Files.lines(expectedWithColumns)
+                .forEach { line -> expectedFileContent += line }
         assertEquals("File content is the same", resultContent, expectedFileContent)
     }
 
@@ -132,12 +110,12 @@ class BindyGeneratorTest {
         assertEquals("Field name=tax", "tax", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=mixedBag", "mixedBag", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field objectTypeName=String", FieldType.STRING, fieldMapFromFile[0]?.type)
-        assertEquals("Field objectTypeName=int", FieldType.INTEGER, fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=String", StringType.STRING.label, fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=int", IntegerType.INTEGER_PRIMITIVE.label, fieldMapFromFile[1]?.type)
         assertEquals("Field objectTypeName=float when mixed int and decimal types",
-                FieldType.DECIMAL, fieldMapFromFile[2]?.type)
+                DecimalType.FLOAT_PRIMITIVE.label, fieldMapFromFile[2]?.type)
         assertEquals("Field objectTypeName=String when at least one field is a String",
-                FieldType.STRING, fieldMapFromFile[3]?.type)
+                StringType.STRING.label, fieldMapFromFile[3]?.type)
 
         assertEquals(0, fieldMapFromFile[0]?.pos)
         assertEquals(1, fieldMapFromFile[1]?.pos)
@@ -198,7 +176,7 @@ class BindyGeneratorTest {
         assertEquals("Field name=COLUMN_3", "COLUMN_3", fieldMapFromFile[3]?.javaFieldName)
 
         assertEquals("Field objectTypeName=String", StringType.STRING.label, fieldMapFromFile[0]?.type)
-        assertEquals("Field objectTypeName=int", DecimalType.FLOAT_PRIMITIVE.label, fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=int", IntegerType.INTEGER_PRIMITIVE.label, fieldMapFromFile[1]?.type)
         assertEquals("Field objectTypeName=float when mixed int and decimal types",
                 DecimalType.FLOAT_PRIMITIVE.label, fieldMapFromFile[2]?.type)
         assertEquals("Field objectTypeName=String when at least one field is a String",
@@ -262,6 +240,30 @@ class BindyGeneratorTest {
         assertEquals(FieldType.DECIMAL, generator.getType("24.5"))
     }
 
+    @Test
+    fun testMappingToEnumCorrect() {
+        val config = getConfig(
+                integerType = IntegerType.INTEGER,
+                decimalType = DecimalType.FLOAT,
+                stringType = StringType.STRING)
+        val generator = getGenerator(config)
+        assertEquals(StringType.STRING.label, generator.mapToCorrespondingFieldType(generator.getType("Hello")))
+        assertEquals(IntegerType.INTEGER.label, generator.mapToCorrespondingFieldType(generator.getType("25")))
+        assertEquals(DecimalType.FLOAT.label, generator.mapToCorrespondingFieldType(generator.getType("24.5")))
+    }
+
+    @Test
+    fun testMappingToEnumCorrect_primitiveTypes() {
+        val config = getConfig(
+                integerType = IntegerType.SHORT_PRIMITIVE,
+                decimalType = DecimalType.DOUBLE_PRIMITIVE,
+                stringType = StringType.CHAR_SEQUENCE)
+        val generator = getGenerator(config)
+        assertEquals(StringType.CHAR_SEQUENCE.label, generator.mapToCorrespondingFieldType(generator.getType("Hello")))
+        assertEquals(IntegerType.SHORT_PRIMITIVE.label, generator.mapToCorrespondingFieldType(generator.getType("25")))
+        assertEquals(DecimalType.DOUBLE_PRIMITIVE.label, generator.mapToCorrespondingFieldType(generator.getType("24.5")))
+    }
+
     private fun getConfig(delimiter: String = ";",
                           javaClassName: String = "BindyPerson",
                           fieldMapping: FieldMapping = FieldMapping.LOWER_CAMEL_CASE,
@@ -271,6 +273,20 @@ class BindyGeneratorTest {
                           integerType: IntegerType = IntegerType.INTEGER_PRIMITIVE,
                           stringType: StringType = StringType.STRING): GeneratorConfig {
         return GeneratorConfig(delimiter, javaClassName, fieldMapping, isHeader, includeColumnName, integerType, decimalType, stringType)
+    }
+
+    private fun getConfig(
+            decimalType: DecimalType,
+            integerType: IntegerType,
+            stringType: StringType): GeneratorConfig {
+        return GeneratorConfig(delimiter = ";",
+                javaClassName = "Jonsson",
+                fieldMapping = FieldMapping.AS_IS,
+                isIncludeColumnName = true,
+                isHeader = true,
+                decimalType = decimalType,
+                integerType = integerType,
+                stringType = stringType)
     }
 
     private fun getGenerator(generatorConfig: GeneratorConfig = getConfig(),

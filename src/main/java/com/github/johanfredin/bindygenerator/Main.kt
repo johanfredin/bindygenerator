@@ -12,7 +12,6 @@ fun main() {
             decimalType = DecimalType.BIG_DECIMAL,
             integerType = IntegerType.BYTE,
             stringType = StringType.CHAR_SEQUENCE
-
     )
 
     val dataSourcePath = Paths.get("src/main/resources/ff.txt")

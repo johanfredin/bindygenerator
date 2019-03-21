@@ -49,15 +49,10 @@ internal class BindyGenerator(private val generatorConfig: GeneratorConfig,
                 }
 
                 pw.println()
-                val type = when(field.type) {
-                    FieldType.STRING -> generatorConfig.stringType.label
-                    FieldType.INTEGER -> generatorConfig.integerType.label
-                    FieldType.DECIMAL -> generatorConfig.decimalType.label
-                }
 
-                pw.println("""	private $type ${field.javaFieldName};""")
+                pw.println("""	private ${field.type} ${field.javaFieldName};""")
                 pw.println()
-                log.info("Field added, type=$type, name=${field.javaFieldName}")
+                log.info("Field added, type=${field.type}, name=${field.javaFieldName}")
             }
             pw.println("}")
             log.info("java source file $javaSourceFile created")
@@ -65,6 +60,14 @@ internal class BindyGenerator(private val generatorConfig: GeneratorConfig,
             ex.printStackTrace()
         } finally {
             pw?.close()
+        }
+    }
+
+    fun mapToCorrespondingFieldType(field: FieldType): String {
+        return when(field) {
+            FieldType.STRING -> generatorConfig.stringType.label
+            FieldType.INTEGER -> generatorConfig.integerType.label
+            FieldType.DECIMAL -> generatorConfig.decimalType.label
         }
     }
 
@@ -93,7 +96,7 @@ internal class BindyGenerator(private val generatorConfig: GeneratorConfig,
                 record.forEach { column ->
                     var bindyField = bindyFieldMap[index]
                     if (bindyField == null) {
-                        bindyField = BindyField(index, header[index].dataSourceName, header[index].javaFieldName, FieldType.STRING)
+                        bindyField = BindyField(index, header[index].dataSourceName, header[index].javaFieldName, "String")
                     }
                     val fieldTypesAtIndex =
                             if (fieldTypesMap[index] == null)
@@ -118,8 +121,9 @@ internal class BindyGenerator(private val generatorConfig: GeneratorConfig,
                             .stream()
                             .sorted(Comparator.comparing(FieldType::priority))
                             .findFirst()
+                            .orElse(FieldType.STRING)
 
-                    bindyField?.type = first?.orElseThrow(::RuntimeException) ?: FieldType.STRING
+                    bindyField?.type = mapToCorrespondingFieldType(first)
                 }
 
             }
