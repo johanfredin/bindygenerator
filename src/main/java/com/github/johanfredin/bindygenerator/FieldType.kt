@@ -6,12 +6,11 @@ package com.github.johanfredin.bindygenerator
  * datasource is numeric on one line and a string on the next
  * then String will be used for the variable etc.
  * @property priority the priority of the variable objectTypeName
- * @property objectTypeName the variable objectTypeName
  */
-enum class FieldType(val priority: Int, val objectTypeName: String, val primitiveTypeName: String) : Comparable<FieldType> {
+enum class FieldType(val priority: Int) : Comparable<FieldType> {
 
-    STRING(1, "String", "String"),
-    FLOAT(2, "Float", "float"),
-    INTEGER(3, "Integer", "int");
+    STRING(1),
+    DECIMAL(2),
+    INTEGER(3);
 
 }

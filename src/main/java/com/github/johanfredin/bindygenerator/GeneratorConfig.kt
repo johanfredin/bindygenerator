@@ -17,7 +17,7 @@ data class GeneratorConfig(val delimiter: String,
                            val fieldMapping: FieldMapping,
                            val isHeader: Boolean,
                            val isIncludeColumnName: Boolean,
-                           val integerType: IntegerType = IntegerType.DEFAULT,
-                           val decimalType: DecimalType = DecimalType.DEFAULT,
-                           val stringType: StringType = StringType.DEFAULT)
+                           val integerType: IntegerType,
+                           val decimalType: DecimalType,
+                           val stringType: StringType)
 

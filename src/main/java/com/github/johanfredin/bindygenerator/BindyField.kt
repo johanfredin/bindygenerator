@@ -12,4 +12,4 @@ package com.github.johanfredin.bindygenerator
 data class BindyField(val pos: Int,
                       val dataSourceName: String,
                       val javaFieldName: String,
-                      var type: String = FieldType.STRING.objectTypeName)
+                      var type: FieldType)

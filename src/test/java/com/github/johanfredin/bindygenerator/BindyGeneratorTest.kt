@@ -47,13 +47,15 @@ class BindyGeneratorTest {
     @Throws(FileNotFoundException::class)
     fun testGenerate_NoColumnNames() {
         val config = getConfig(
-                ";",
-                "Jonsson",
-                FieldMapping.LOWER_CAMEL_CASE,
-                isHeader = true,
-                useNumericFieldTypes = true,
-                usePrimitiveTypesWherePossible = false,
-                includeColumnName = false)
+                delimiter = ";",
+                javaClassName = "Jonsson",
+                fieldMapping = FieldMapping.LOWER_CAMEL_CASE,
+                includeColumnName = true,
+                isHeader = false,
+                integerType = IntegerType.INTEGER,
+                decimalType = DecimalType.FLOAT,
+                stringType = StringType.STRING)
+
         val generator = getGenerator(config, source, javaSourceFilePathNoColumns)
         generator.generate()
         val result = javaSourceFilePathNoColumns.toFile()
@@ -79,13 +81,15 @@ class BindyGeneratorTest {
     @Test
     fun getFieldMapFromFile_hasHeader_useNumericFieldValues_ObjectTypes() {
         val config = getConfig(
-                ";",
-                "Jonsson",
-                FieldMapping.LOWER_CAMEL_CASE,
+                delimiter = ";",
+                javaClassName = "Jonsson",
+                fieldMapping = FieldMapping.LOWER_CAMEL_CASE,
+                includeColumnName = true,
                 isHeader = true,
-                useNumericFieldTypes = true,
-                usePrimitiveTypesWherePossible = false,
-                includeColumnName = true)
+                integerType = IntegerType.INTEGER,
+                decimalType = DecimalType.FLOAT,
+                stringType = StringType.STRING)
+
         val generator = getGenerator(config)
 
         val fieldMapFromFile = generator.fieldMapFromFile
@@ -95,12 +99,12 @@ class BindyGeneratorTest {
         assertEquals("Field name=tax", "tax", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=mixedBag", "mixedBag", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field objectTypeName=String", FieldType.STRING.objectTypeName, fieldMapFromFile[0]?.type)
-        assertEquals("Field objectTypeName=Integer", FieldType.INTEGER.objectTypeName, fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=String", StringType.STRING.label, fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=Integer", IntegerType.INTEGER.label, fieldMapFromFile[1]?.type)
         assertEquals("Field objectTypeName=Float when mixed int and decimal types",
-                FieldType.FLOAT.objectTypeName, fieldMapFromFile[2]?.type)
+                DecimalType.FLOAT.label, fieldMapFromFile[2]?.type)
         assertEquals("Field objectTypeName=String when at least one field is a String",
-                FieldType.STRING.objectTypeName, fieldMapFromFile[3]?.type)
+                StringType.STRING.label, fieldMapFromFile[3]?.type)
 
         assertEquals(0, fieldMapFromFile[0]?.pos)
         assertEquals(1, fieldMapFromFile[1]?.pos)
@@ -111,13 +115,14 @@ class BindyGeneratorTest {
     @Test
     fun getFieldMapFromFile_hasHeader_useNumericFieldValues_PrimitiveTypes() {
         val config = getConfig(
-                ";",
-                "Jonsson",
-                FieldMapping.LOWER_CAMEL_CASE,
+                delimiter = ";",
+                javaClassName = "Jonsson",
+                fieldMapping = FieldMapping.LOWER_CAMEL_CASE,
+                includeColumnName = true,
                 isHeader = true,
-                useNumericFieldTypes = true,
-                usePrimitiveTypesWherePossible = true,
-                includeColumnName = true)
+                integerType = IntegerType.INTEGER_PRIMITIVE,
+                decimalType = DecimalType.FLOAT_PRIMITIVE,
+                stringType = StringType.STRING)
 
         val fieldMapFromFile = getGenerator(config).fieldMapFromFile
 
@@ -127,12 +132,12 @@ class BindyGeneratorTest {
         assertEquals("Field name=tax", "tax", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=mixedBag", "mixedBag", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field objectTypeName=String", String::class.java.simpleName, fieldMapFromFile[0]?.type)
-        assertEquals("Field objectTypeName=int", "int", fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=String", FieldType.STRING, fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=int", FieldType.INTEGER, fieldMapFromFile[1]?.type)
         assertEquals("Field objectTypeName=float when mixed int and decimal types",
-                "float", fieldMapFromFile[2]?.type)
+                FieldType.DECIMAL, fieldMapFromFile[2]?.type)
         assertEquals("Field objectTypeName=String when at least one field is a String",
-                String::class.java.simpleName, fieldMapFromFile[3]?.type)
+                FieldType.STRING, fieldMapFromFile[3]?.type)
 
         assertEquals(0, fieldMapFromFile[0]?.pos)
         assertEquals(1, fieldMapFromFile[1]?.pos)
@@ -143,13 +148,14 @@ class BindyGeneratorTest {
     @Test
     fun testFieldMapFromFile_noHeader_DoNotUseNumericFieldValues() {
         val config = getConfig(
-                ";",
-                "Jonsson",
-                FieldMapping.AS_IS,
+                delimiter = ";",
+                javaClassName = "Jonsson",
+                fieldMapping = FieldMapping.AS_IS,
+                includeColumnName = true,
                 isHeader = false,
-                useNumericFieldTypes = false,
-                usePrimitiveTypesWherePossible = true,
-                includeColumnName = true)
+                integerType = IntegerType.DEFAULT,
+                decimalType = DecimalType.DEFAULT,
+                stringType = StringType.STRING)
 
         val fieldMapFromFile = getGenerator(config).fieldMapFromFile
 
@@ -159,9 +165,9 @@ class BindyGeneratorTest {
         assertEquals("Field name=COLUMN_2", "COLUMN_2", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=COLUMN_3", "COLUMN_3", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field objectTypeName=String", String::class.java.simpleName, fieldMapFromFile[0]?.type)
-        assertEquals("Field objectTypeName=String", String::class.java.simpleName, fieldMapFromFile[1]?.type)
-        assertEquals("Field objectTypeName=String", String::class.java.simpleName, fieldMapFromFile[2]?.type)
+        assertEquals("Field objectTypeName=String", StringType.STRING.label, fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=String", StringType.STRING.label, fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=String", StringType.STRING.label, fieldMapFromFile[2]?.type)
         assertEquals("Field objectTypeName=String when at least one field is a String",
                 String::class.java.simpleName, fieldMapFromFile[3]?.type)
 
@@ -174,13 +180,14 @@ class BindyGeneratorTest {
     @Test
     fun testFieldMapFromFile_noHeader_UseNumericFieldValues_PrimitiveTypes() {
         val config = getConfig(
-                ";",
-                "Jonsson",
-                FieldMapping.AS_IS,
+                delimiter = ";",
+                javaClassName = "Jonsson",
+                fieldMapping = FieldMapping.AS_IS,
+                includeColumnName = true,
                 isHeader = false,
-                useNumericFieldTypes = true,
-                usePrimitiveTypesWherePossible = true,
-                includeColumnName = true)
+                integerType = IntegerType.INTEGER_PRIMITIVE,
+                decimalType = DecimalType.FLOAT_PRIMITIVE,
+                stringType = StringType.STRING)
 
         val fieldMapFromFile = getGenerator(config).fieldMapFromFile
 
@@ -190,12 +197,12 @@ class BindyGeneratorTest {
         assertEquals("Field name=COLUMN_2", "COLUMN_2", fieldMapFromFile[2]?.javaFieldName)
         assertEquals("Field name=COLUMN_3", "COLUMN_3", fieldMapFromFile[3]?.javaFieldName)
 
-        assertEquals("Field objectTypeName=String", FieldType.STRING.primitiveTypeName, fieldMapFromFile[0]?.type)
-        assertEquals("Field objectTypeName=int", FieldType.INTEGER.primitiveTypeName, fieldMapFromFile[1]?.type)
+        assertEquals("Field objectTypeName=String", StringType.STRING.label, fieldMapFromFile[0]?.type)
+        assertEquals("Field objectTypeName=int", DecimalType.FLOAT_PRIMITIVE.label, fieldMapFromFile[1]?.type)
         assertEquals("Field objectTypeName=float when mixed int and decimal types",
-                FieldType.FLOAT.primitiveTypeName, fieldMapFromFile[2]?.type)
+                DecimalType.FLOAT_PRIMITIVE.label, fieldMapFromFile[2]?.type)
         assertEquals("Field objectTypeName=String when at least one field is a String",
-                FieldType.STRING.primitiveTypeName, fieldMapFromFile[3]?.type)
+                StringType.STRING.label, fieldMapFromFile[3]?.type)
 
         assertEquals(0, fieldMapFromFile[0]?.pos)
         assertEquals(1, fieldMapFromFile[1]?.pos)
@@ -235,33 +242,35 @@ class BindyGeneratorTest {
         val generator = getGenerator()
         assertEquals(FieldType.STRING, generator.getType("Hello"))
         assertEquals(FieldType.INTEGER, generator.getType("25"))
-        assertEquals(FieldType.FLOAT, generator.getType("24.5"))
+        assertEquals(FieldType.DECIMAL, generator.getType("24.5"))
     }
 
     @Test
     fun testGetFieldType_ObjectTypes() {
         val config = getConfig(
-                ";",
-                "Jonsson",
-                FieldMapping.AS_IS,
+                delimiter = ";",
+                javaClassName = "Jonsson",
+                fieldMapping = FieldMapping.AS_IS,
+                includeColumnName = true,
                 isHeader = true,
-                useNumericFieldTypes = true,
-                usePrimitiveTypesWherePossible = false,
-                includeColumnName = true)
+                integerType = IntegerType.INTEGER,
+                decimalType = DecimalType.FLOAT,
+                stringType = StringType.STRING)
         val generator = getGenerator(config)
         assertEquals(FieldType.STRING, generator.getType("Hello"))
         assertEquals(FieldType.INTEGER, generator.getType("25"))
-        assertEquals(FieldType.FLOAT, generator.getType("24.5"))
+        assertEquals(FieldType.DECIMAL, generator.getType("24.5"))
     }
 
     private fun getConfig(delimiter: String = ";",
                           javaClassName: String = "BindyPerson",
                           fieldMapping: FieldMapping = FieldMapping.LOWER_CAMEL_CASE,
                           isHeader: Boolean = true,
-                          useNumericFieldTypes: Boolean = true,
-                          usePrimitiveTypesWherePossible: Boolean = true,
-                          includeColumnName: Boolean = true): GeneratorConfig {
-        return GeneratorConfig(delimiter, javaClassName, fieldMapping, isHeader, useNumericFieldTypes, usePrimitiveTypesWherePossible, includeColumnName)
+                          includeColumnName: Boolean = true,
+                          decimalType: DecimalType = DecimalType.FLOAT_PRIMITIVE,
+                          integerType: IntegerType = IntegerType.INTEGER_PRIMITIVE,
+                          stringType: StringType = StringType.STRING): GeneratorConfig {
+        return GeneratorConfig(delimiter, javaClassName, fieldMapping, isHeader, includeColumnName, integerType, decimalType, stringType)
     }
 
     private fun getGenerator(generatorConfig: GeneratorConfig = getConfig(),
