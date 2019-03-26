@@ -24,57 +24,42 @@ internal class BindyGenerator(private val generatorConfig: GeneratorConfig,
     fun generate() {
         log.info("Selected configuration=$generatorConfig")
         val fieldMapFromFile = this.fieldMapFromFile
-        var pw: PrintWriter? = null
-        try {
-            val javaSourceFile = this.javaSourceFilePath.toFile()
-            pw = PrintWriter(javaSourceFile)
+        val javaSourceFile = this.javaSourceFilePath.toFile()
+        val pw = PrintWriter(javaSourceFile)
 
-            pw.println()
-            pw.println("import org.apache.camel.dataformat.bindy.annotation.CsvRecord;")
-            pw.println("import org.apache.camel.dataformat.bindy.annotation.DataField;")
-            pw.println()
-            pw.println("""@CsvRecord(separator = "${generatorConfig.delimiter}")""")
-            pw.println("""public class ${generatorConfig.javaClassName} {""")
-            pw.println()
+        pw.println()
+        pw.println("import org.apache.camel.dataformat.bindy.annotation.CsvRecord;")
+        pw.println("import org.apache.camel.dataformat.bindy.annotation.DataField;")
+        pw.println()
+        pw.println("""@CsvRecord(separator = "${generatorConfig.delimiter}")""")
+        pw.println("""public class ${generatorConfig.javaClassName} {""")
+        pw.println()
 
-            // Begin iterating the fields
-            fieldMapFromFile.values.forEach { field ->
+        // Begin iterating the fields
+        fieldMapFromFile.values.forEach { field ->
 
-                pw.print("\t@DataField(pos=" + (field.pos + 1)) // Bindy field positions start at 1!
+            pw.print("\t@DataField(pos=" + (field.pos + 1)) // Bindy field positions start at 1!
 
-                if (generatorConfig.isIncludeColumnName) {
-                    pw.print(""", columnName="${field.dataSourceName}")""")
-                } else {
-                    pw.print(")")
-                }
-
-                pw.println()
-
-                pw.println("""	private ${field.type} ${field.javaFieldName};""")
-                pw.println()
-                log.info("Field added, type=${field.type}, name=${field.javaFieldName}")
+            if (generatorConfig.isIncludeColumnName) {
+                pw.print(""", columnName="${field.dataSourceName}")""")
+            } else {
+                pw.print(")")
             }
-            pw.println("}")
-            log.info("java source file $javaSourceFile created")
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-        } finally {
-            pw?.close()
-        }
-    }
 
-    fun mapToCorrespondingFieldType(field: FieldType): String {
-        return when(field) {
-            FieldType.STRING -> generatorConfig.stringType.label
-            FieldType.INTEGER -> generatorConfig.integerType.label
-            FieldType.DECIMAL -> generatorConfig.decimalType.label
+            pw.println()
+
+            pw.println("""	private ${field.type} ${field.javaFieldName};""")
+            pw.println()
+            log.info("Field added, type=${field.type}, name=${field.javaFieldName}")
         }
+        pw.println("}")
+        log.info("java source file $javaSourceFile created")
+        pw.close()
     }
 
     /**
-     * Fetch the context from the file and decide field types.
-     * Find all possible field types for current field
-     * Now set the highest priority field for the BindyFieldsMap
+     * Fetch the content from the file and decide field types.
+     *
      */
     val fieldMapFromFile: Map<Int, BindyField>
         get() {
@@ -90,24 +75,26 @@ internal class BindyGenerator(private val generatorConfig: GeneratorConfig,
                 val currentLine = sc.nextLine()
 
                 // Split line into columns
-                val record = currentLine.split(this.generatorConfig.delimiter.toRegex()).dropLastWhile(String::isEmpty).toTypedArray()
-                var index = 0
+                val record = currentLine
+                        .split(this.generatorConfig.delimiter.toRegex())
+                        .dropLastWhile(String::isEmpty)
+                        .toTypedArray()
 
+                var columnIndex = 0
+
+                // Iterate columns
                 record.forEach { column ->
-                    var bindyField = bindyFieldMap[index]
-                    if (bindyField == null) {
-                        bindyField = BindyField(index, header[index].dataSourceName, header[index].javaFieldName, "String")
-                    }
-                    val fieldTypesAtIndex =
-                            if (fieldTypesMap[index] == null)
-                                HashSet()
-                            else
-                                fieldTypesMap[index]
+                    val bindyField = if (bindyFieldMap[columnIndex] == null)
+                        BindyField(columnIndex, header[columnIndex].dataSourceName, header[columnIndex].javaFieldName)
+                    else
+                        bindyFieldMap[columnIndex]
+
+                    val fieldTypesAtIndex = if (fieldTypesMap[columnIndex] == null) HashSet() else fieldTypesMap[columnIndex]
 
                     fieldTypesAtIndex?.add(getType(column))
-                    fieldTypesMap[index] = fieldTypesAtIndex!!
-                    bindyFieldMap[index] = bindyField
-                    index++
+                    fieldTypesMap[columnIndex] = fieldTypesAtIndex!!
+                    bindyFieldMap[columnIndex] = bindyField!!
+                    columnIndex++
                 }
             }
 
@@ -130,6 +117,18 @@ internal class BindyGenerator(private val generatorConfig: GeneratorConfig,
             return bindyFieldMap
         }
 
+    fun mapToCorrespondingFieldType(field: FieldType): String {
+        return when (field) {
+            FieldType.STRING -> generatorConfig.stringType.label
+            FieldType.INTEGER -> generatorConfig.integerType.label
+            FieldType.DECIMAL -> generatorConfig.decimalType.label
+        }
+    }
+
+    /**
+     * Fetch the header row in the input file and place it into a list of DatasetHeader objects.
+     *
+     */
     private fun getHeader(nextLine: String): List<DatasetHeader> {
         val header = nextLine.split(this.generatorConfig.delimiter.toRegex()).dropLastWhile(String::isEmpty)
         val list = ArrayList<DatasetHeader>()
