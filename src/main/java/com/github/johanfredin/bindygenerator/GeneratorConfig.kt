@@ -19,5 +19,5 @@ data class GeneratorConfig(val delimiter: String,
                            val isIncludeColumnName: Boolean,
                            val integerType: IntegerType,
                            val decimalType: DecimalType,
-                           val stringType: StringType)
+                           val stringType: `StringType.java`)
 
